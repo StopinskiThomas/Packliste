@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>Gemeinsame Packliste</title>
+  <title>🧳 Gemeinsame Packliste</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
@@ -35,93 +35,95 @@
   <ul id="liste" aria-live="polite"></ul>
 
   <script>
-const supabase = supabase.createClient(
-  'https://qbgbnuvsynirylpylevo.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiZ2JudXZzeW5pcnlscHlsZXZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2Njk2OTYsImV4cCI6MjA2NjI0NTY5Nn0.DBrU6xd8oBVX1_yXC7wOkX1ZykK2gHhzdWPO9t58w5o'
-);
+    document.addEventListener('DOMContentLoaded', () => {
+      const supabase = window.supabase.createClient(
+        'https://DEINE-URL.supabase.co', // 🔁 ERSETZEN!
+        'DEIN-ÖFFENTLICHER-ANON-KEY'      // 🔁 ERSETZEN!
+      );
 
-    const liste = document.getElementById('liste');
+      const liste = document.getElementById('liste');
 
-    async function ladeListe() {
-      const { data, error } = await supabase
-        .from('packliste')
-        .select('*')
-        .order('inserted_at', { ascending: true });
+      async function ladeListe() {
+        const { data, error } = await supabase
+          .from('packliste')
+          .select('*')
+          .order('inserted_at', { ascending: true });
 
-      if (error) {
-        console.error('Fehler beim Laden:', error);
-        return;
+        if (error) {
+          console.error('Fehler beim Laden:', error.message, error);
+          return;
+        }
+
+        console.log('Geladene Daten:', data);
+
+        liste.innerHTML = '';
+        data.forEach(item => {
+          if (!item || !item.name || typeof item.data !== 'object') return;
+
+          const li = document.createElement('li');
+          const erledigt = item.data?.erledigt;
+
+          li.className = erledigt ? 'erledigt' : '';
+          li.innerHTML = `
+            <strong>${item.name}</strong> (${item.data?.anzahl ?? 1})
+            <br><em>${item.data?.kategorie ?? ''}</em> – ${item.data?.hinweis ?? ''}
+          `;
+
+          li.setAttribute('tabindex', 0);
+          li.setAttribute('role', 'button');
+          li.setAttribute('aria-pressed', erledigt ? 'true' : 'false');
+
+          li.addEventListener('click', () => toggleErledigt(item));
+          li.addEventListener('keypress', e => {
+            if (e.key === 'Enter') toggleErledigt(item);
+          });
+
+          liste.appendChild(li);
+        });
       }
 
-      liste.innerHTML = '';
-      data.forEach(item => {
-        const li = document.createElement('li');
-        const erledigt = item.data?.erledigt;
+      async function toggleErledigt(item) {
+        const erledigtNeu = !(item.data?.erledigt ?? false);
+        const neueDaten = { ...item.data, erledigt: erledigtNeu };
 
-        li.className = erledigt ? 'erledigt' : '';
-        li.innerHTML = `
-          <strong>${item.name}</strong> (${item.data?.anzahl ?? 1})
-          <br><em>${item.data?.kategorie ?? ''}</em> – ${item.data?.hinweis ?? ''}
-        `;
+        const { error } = await supabase
+          .from('packliste')
+          .update({ data: neueDaten })
+          .eq('id', item.id);
 
-        li.setAttribute('tabindex', 0);
-        li.setAttribute('role', 'button');
-        li.setAttribute('aria-pressed', erledigt ? 'true' : 'false');
+        if (error) console.error('Update-Fehler:', error.message, error);
 
-        li.addEventListener('click', () => toggleErledigt(item));
-        li.addEventListener('keypress', e => {
-          if (e.key === 'Enter') toggleErledigt(item);
-        });
+        ladeListe();
+      }
 
-        liste.appendChild(li);
+      document.getElementById('addForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('name').value.trim();
+        const kategorie = document.getElementById('kategorie').value.trim();
+        const hinweis = document.getElementById('hinweis').value.trim();
+        const anzahl = parseInt(document.getElementById('anzahl').value, 10) || 1;
+
+        if (!name) return;
+
+        const data = {
+          kategorie: kategorie || undefined,
+          hinweis: hinweis || undefined,
+          anzahl: anzahl,
+          erledigt: false
+        };
+
+        const { error } = await supabase
+          .from('packliste')
+          .insert([{ name, data }]);
+
+        if (error) console.error('Insert-Fehler:', error.message, error);
+
+        e.target.reset();
+        ladeListe();
       });
-    }
 
-    async function toggleErledigt(item) {
-      const erledigtNeu = !(item.data?.erledigt ?? false);
-      const neueDaten = { ...item.data, erledigt: erledigtNeu };
-
-      await supabase
-        .from('packliste')
-        .update({ data: neueDaten })
-        .eq('id', item.id);
-
-      ladeListe();
-    }
-
-    document.getElementById('addForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('name').value.trim();
-      const kategorie = document.getElementById('kategorie').value.trim();
-      const hinweis = document.getElementById('hinweis').value.trim();
-      const anzahl = parseInt(document.getElementById('anzahl').value, 10) || 1;
-
-      if (!name) return;
-
-      const data = {
-        kategorie: kategorie || undefined,
-        hinweis: hinweis || undefined,
-        anzahl: anzahl,
-        erledigt: false
-      };
-
-      await supabase
-        .from('packliste')
-        .insert([{ name, data }]);
-const { error } = await supabase
-  .from('packliste')
-  .insert([{ name, data }]);
-
-if (error) console.error('Insert-Fehler:', error);
-
-      e.target.reset();
       ladeListe();
     });
-
-    ladeListe();
   </script>
 </body>
 </html>
-
-
-
