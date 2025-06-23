@@ -108,6 +108,11 @@ const supabase = supabase.createClient(
       await supabase
         .from('packliste')
         .insert([{ name, data }]);
+const { error } = await supabase
+  .from('packliste')
+  .insert([{ name, data }]);
+
+if (error) console.error('Insert-Fehler:', error);
 
       e.target.reset();
       ladeListe();
