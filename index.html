@@ -1,1 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Gemeinsame Packliste</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
+    li { cursor: pointer; margin-bottom: 0.5rem; }
+    label { display: block; margin-top: 1rem; }
+    input, select, button { width: 100%; padding: 0.5rem; margin-top: 0.2rem; }
+    .erledigt { text-decoration: line-through; color: gray; }
+  </style>
+</head>
+<body>
+  <h1>🧳 Unsere Packliste</h1>
 
+  <form id="addForm">
+    <label for="name">Item</label>
+    <input id="name" required>
+
+    <label for="kategorie">Kategorie</label>
+    <input id="kategorie" placeholder="z. B. Kleidung, Technik">
+
+    <label for="hinweis">Hinweis</label>
+    <input id="hinweis" placeholder="optional">
+
+    <label for="anzahl">Anzahl</label>
+    <input id="anzahl" type="number" min="1" value="1">
+
+    <button type="submit">➕ Hinzufügen</button>
+  </form>
+
+  <h2>📋 Liste</h2>
+  <ul id="liste" aria-live="polite"></ul>
+
+  <script>
+    const supabase = supabase.createClient(
+      'https://DEINE-SUPABASE-URL.supabase.co',  // ✅ Ersetzen
+      'DEIN-ANON-KEY'                            // ✅ Ersetzen
+    );
+
+    const liste = document.getElementById('liste');
+
+    async function ladeListe() {
+      const { data, error } = await supabase
+        .from('packliste')
+        .select('*')
+        .order('inserted_at', { ascending: true });
+
+      if (error) {
+        console.error('Fehler beim Laden:', error);
+        return;
+      }
+
+      liste.innerHTML = '';
+      data.forEach(item => {
+        const li = document.createElement('li');
+        const erledigt = item.data?.erledigt;
+
+        li.className = erledigt ? 'erledigt' : '';
+        li.innerHTML = `
+          <strong>${item.name}</strong> (${item.data?.anzahl ?? 1})
+          <br><em>${item.data?.kategorie ?? ''}</em> – ${item.data?.hinweis ?? ''}
+        `;
+
+        li.setAttribute('tabindex', 0);
+        li.setAttribute('role', 'button');
+        li.setAttribute('aria-pressed', erledigt ? 'true' : 'false');
+
+        li.addEventListener('click', () => toggleErledigt(item));
+        li.addEventListener('keypress', e => {
+          if (e.key === 'Enter') toggleErledigt(item);
+        });
+
+        liste.appendChild(li);
+      });
+    }
+
+    async function toggleErledigt(item) {
+      const erledigtNeu = !(item.data?.erledigt ?? false);
+      const neueDaten = { ...item.data, erledigt: erledigtNeu };
+
+      await supabase
+        .from('packliste')
+        .update({ data: neueDaten })
+        .eq('id', item.id);
+
+      ladeListe();
+    }
+
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const kategorie = document.getElementById('kategorie').value.trim();
+      const hinweis = document.getElementById('hinweis').value.trim();
+      const anzahl = parseInt(document.getElementById('anzahl').value, 10) || 1;
+
+      if (!name) return;
+
+      const data = {
+        kategorie: kategorie || undefined,
+        hinweis: hinweis || undefined,
+        anzahl: anzahl,
+        erledigt: false
+      };
+
+      await supabase
+        .from('packliste')
+        .insert([{ name, data }]);
+
+      e.target.reset();
+      ladeListe();
+    });
+
+    ladeListe();
+  </script>
+</body>
+</html>
