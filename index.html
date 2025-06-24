@@ -5,31 +5,86 @@
   <title>🧳 Gemeinsame Packliste</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; }
-    li { cursor: pointer; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center; }
-    .text { flex-grow: 1; }
-    label { display: block; margin-top: 1rem; }
-    input, select, button { width: 100%; padding: 0.5rem; margin-top: 0.2rem; }
-    .erledigt { text-decoration: line-through; color: gray; }
-    .loeschen-btn { margin-left: 1rem; background: #f44336; color: white; border: none; padding: 0.4rem 0.6rem; cursor: pointer; border-radius: 4px; }
+    body {
+      font-family: sans-serif;
+      max-width: 700px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: flex-end;
+      margin-bottom: 2rem;
+    }
+
+    form input, form button {
+      flex: 1 1 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+
+    @media (min-width: 500px) {
+      form input[type="text"],
+      form input[type="number"] {
+        flex: 1 1 calc(25% - 0.5rem);
+      }
+      form button {
+        flex: 1 1 100%;
+      }
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      background: #f3f3f3;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .text {
+      flex-grow: 1;
+      cursor: pointer;
+    }
+
+    .erledigt .text {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .loeschen-btn {
+      margin-left: 1rem;
+      background: #f44336;
+      color: white;
+      border: none;
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
   <h1>🧳 Unsere Packliste</h1>
 
   <form id="addForm">
-    <label for="name">Item</label>
-    <input id="name" required>
-
-    <label for="kategorie">Kategorie</label>
-    <input id="kategorie" placeholder="z. B. Kleidung, Technik">
-
-    <label for="hinweis">Hinweis</label>
-    <input id="hinweis" placeholder="optional">
-
-    <label for="anzahl">Anzahl</label>
-    <input id="anzahl" type="number" min="1" value="1">
-
+    <input id="name" placeholder="📝 Item" required>
+    <input id="kategorie" placeholder="📂 Kategorie">
+    <input id="hinweis" placeholder="💬 Hinweis">
+    <input id="anzahl" type="number" min="1" value="1" placeholder="🔢 Anzahl">
     <button type="submit">➕ Hinzufügen</button>
   </form>
 
@@ -61,20 +116,18 @@
           if (!item || !item.name || typeof item.data !== 'object') return;
 
           const li = document.createElement('li');
-          const erledigt = item.data?.erledigt;
-
-          li.className = erledigt ? 'erledigt' : '';
+          li.className = item.data?.erledigt ? 'erledigt' : '';
 
           const text = document.createElement('div');
           text.className = 'text';
           text.innerHTML = `
-            <strong>${item.name}</strong> (${item.data?.anzahl ?? 1})
-            <br><em>${item.data?.kategorie ?? ''}</em> – ${item.data?.hinweis ?? ''}
+            <strong>${item.name}</strong> (${item.data?.anzahl ?? 1})<br>
+            <em>${item.data?.kategorie ?? ''}</em> – ${item.data?.hinweis ?? ''}
           `;
 
           text.setAttribute('tabindex', 0);
           text.setAttribute('role', 'button');
-          text.setAttribute('aria-pressed', erledigt ? 'true' : 'false');
+          text.setAttribute('aria-pressed', item.data?.erledigt ? 'true' : 'false');
 
           text.addEventListener('click', () => toggleErledigt(item));
           text.addEventListener('keypress', e => {
@@ -154,3 +207,4 @@
   </script>
 </body>
 </html>
+
