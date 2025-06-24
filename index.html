@@ -2,209 +2,36 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <title>🧳 Gemeinsame Packliste</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <style>
-    body {
-      font-family: sans-serif;
-      max-width: 700px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
-
-    h1, h2 {
-      text-align: center;
-    }
-
-    form {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: flex-end;
-      margin-bottom: 2rem;
-    }
-
-    form input, form button {
-      flex: 1 1 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-
-    @media (min-width: 500px) {
-      form input[type="text"],
-      form input[type="number"] {
-        flex: 1 1 calc(25% - 0.5rem);
-      }
-      form button {
-        flex: 1 1 100%;
-      }
-    }
-
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-
-    li {
-      margin-bottom: 0.5rem;
-      padding: 0.5rem;
-      background: #f3f3f3;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .text {
-      flex-grow: 1;
-      cursor: pointer;
-    }
-
-    .erledigt .text {
-      text-decoration: line-through;
-      color: gray;
-    }
-
-    .loeschen-btn {
-      margin-left: 1rem;
-      background: #f44336;
-      color: white;
-      border: none;
-      padding: 0.4rem 0.6rem;
-      cursor: pointer;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-  </style>
+  <title>Gemeinsame Packliste</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  
+  <!-- Externe Dateien -->
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
+  <script src="script.js" defer></script>
 </head>
 <body>
-  <h1>🧳 Unsere Packliste</h1>
+  <main>
+    <h1>🧳 Unsere Packliste</h1>
 
-  <form id="addForm">
-    <input id="name" placeholder="📝 Item" required>
-    <input id="kategorie" placeholder="📂 Kategorie">
-    <input id="hinweis" placeholder="💬 Hinweis">
-    <input id="anzahl" type="number" min="1" value="1" placeholder="🔢 Anzahl">
-    <button type="submit">➕ Hinzufügen</button>
-  </form>
+    <form id="addForm" aria-labelledby="formTitle">
+      <h2 id="formTitle" class="visually-hidden">Neues Packlisten-Element hinzufügen</h2>
+      <input id="name" placeholder="📝 Artikel" required>
+      <input id="kategorie" placeholder="📂 Kategorie">
+      <input id="hinweis" placeholder="💬 Hinweis">
+      <input id="anzahl" type="number" min="1" value="1" placeholder="🔢 Anzahl">
+      <button type="submit">➕ Hinzufügen</button>
+    </form>
 
-  <h2>📋 Liste</h2>
-  <ul id="liste" aria-live="polite"></ul>
+    <label for="sortierung">Sortieren nach:</label>
+    <select id="sortierung">
+      <option value="inserted_at">🕓 Hinzugefügt</option>
+      <option value="name">🔡 Artikelname</option>
+      <option value="kategorie">📂 Kategorie</option>
+    </select>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const supabase = window.supabase.createClient(
-        'https://qbgbnuvsynirylpylevo.supabase.co', // 🔁 ERSETZEN!
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiZ2JudXZzeW5pcnlscHlsZXZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2Njk2OTYsImV4cCI6MjA2NjI0NTY5Nn0.DBrU6xd8oBVX1_yXC7wOkX1ZykK2gHhzdWPO9t58w5o'      // 🔁 ERSETZEN!
-      );
-
-      const liste = document.getElementById('liste');
-
-      async function ladeListe() {
-        const { data, error } = await supabase
-          .from('packliste')
-          .select('*')
-          .order('inserted_at', { ascending: true });
-
-        if (error) {
-          console.error('Fehler beim Laden:', error.message, error);
-          return;
-        }
-
-        liste.innerHTML = '';
-        data.forEach(item => {
-          if (!item || !item.name || typeof item.data !== 'object') return;
-
-          const li = document.createElement('li');
-          li.className = item.data?.erledigt ? 'erledigt' : '';
-
-          const text = document.createElement('div');
-          text.className = 'text';
-          text.innerHTML = `
-            <strong>${item.name}</strong> (${item.data?.anzahl ?? 1})<br>
-            <em>${item.data?.kategorie ?? ''}</em> – ${item.data?.hinweis ?? ''}
-          `;
-
-          text.setAttribute('tabindex', 0);
-          text.setAttribute('role', 'button');
-          text.setAttribute('aria-pressed', item.data?.erledigt ? 'true' : 'false');
-
-          text.addEventListener('click', () => toggleErledigt(item));
-          text.addEventListener('keypress', e => {
-            if (e.key === 'Enter') toggleErledigt(item);
-          });
-
-          const btn = document.createElement('button');
-          btn.className = 'loeschen-btn';
-          btn.innerText = '🗑️';
-          btn.setAttribute('aria-label', `Lösche Eintrag: ${item.name}`);
-          btn.addEventListener('click', () => loescheEintrag(item.id));
-
-          li.appendChild(text);
-          li.appendChild(btn);
-          liste.appendChild(li);
-        });
-      }
-
-      async function toggleErledigt(item) {
-        const erledigtNeu = !(item.data?.erledigt ?? false);
-        const neueDaten = { ...item.data, erledigt: erledigtNeu };
-
-        const { error } = await supabase
-          .from('packliste')
-          .update({ data: neueDaten })
-          .eq('id', item.id);
-
-        if (error) console.error('Update-Fehler:', error.message, error);
-
-        ladeListe();
-      }
-
-      async function loescheEintrag(id) {
-        const bestaetigt = confirm('Wirklich löschen?');
-        if (!bestaetigt) return;
-
-        const { error } = await supabase
-          .from('packliste')
-          .delete()
-          .eq('id', id);
-
-        if (error) {
-          console.error('Löschfehler:', error.message, error);
-        } else {
-          ladeListe();
-        }
-      }
-
-      document.getElementById('addForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('name').value.trim();
-        const kategorie = document.getElementById('kategorie').value.trim();
-        const hinweis = document.getElementById('hinweis').value.trim();
-        const anzahl = parseInt(document.getElementById('anzahl').value, 10) || 1;
-
-        if (!name) return;
-
-        const data = {
-          kategorie: kategorie || undefined,
-          hinweis: hinweis || undefined,
-          anzahl: anzahl,
-          erledigt: false
-        };
-
-        const { error } = await supabase
-          .from('packliste')
-          .insert([{ name, data }]);
-
-        if (error) console.error('Insert-Fehler:', error.message, error);
-
-        e.target.reset();
-        ladeListe();
-      });
-
-      ladeListe();
-    });
-  </script>
+    <h2>📋 Liste</h2>
+    <ul id="liste" aria-live="polite"></ul>
+  </main>
 </body>
 </html>
-
