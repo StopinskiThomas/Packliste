@@ -3,7 +3,6 @@ const supabase = supabase.createClient(
   'https://qbgbnuvsynirylpylevo.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiZ2JudXZzeW5pcnlscHlsZXZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2Njk2OTYsImV4cCI6MjA2NjI0NTY5Nn0.DBrU6xd8oBVX1_yXC7wOkX1ZykK2gHhzdWPO9t58w5o'
 );
-
 // DOM-Elemente
 const liste = document.getElementById('liste');
 const form = document.getElementById('addForm');
