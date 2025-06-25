@@ -1,15 +1,12 @@
-// Supabase initialisieren
 const supabase = window.supabase.createClient(
   'https://qbgbnuvsynirylpylevo.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFiZ2JudXZzeW5pcnlscHlsZXZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA2Njk2OTYsImV4cCI6MjA2NjI0NTY5Nn0.DBrU6xd8oBVX1_yXC7wOkX1ZykK2gHhzdWPO9t58w5o'
 );
 
-// DOM-Elemente
 const liste = document.querySelector('#liste tbody');
 const form = document.getElementById('addForm');
 const sortierung = document.getElementById('sortierung');
 
-// Einträge laden & anzeigen
 async function ladeListe() {
   const sortFeld = sortierung.value;
 
@@ -27,44 +24,51 @@ async function ladeListe() {
   data.forEach(item => zeigeItem(item));
 }
 
-// Einzelnen Eintrag anzeigen
 function zeigeItem(item) {
   const tr = document.createElement('tr');
   const erledigt = item.data?.erledigt;
 
-  tr.className = erledigt ? 'erledigt' : '';
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = erledigt;
+  checkbox.addEventListener('change', () => toggleErledigt(item, checkbox.checked));
 
-  tr.innerHTML = `
-    <td>${item.name}</td>
-    <td>${item.data?.kategorie ?? ''}</td>
-    <td>${item.data?.hinweis ?? ''}</td>
-    <td>${item.data?.anzahl ?? 1}</td>
-    <td>
-      <button class="loeschen-btn" title="Löschen">🗑️</button>
-    </td>
-  `;
+  const tdCheckbox = document.createElement('td');
+  tdCheckbox.appendChild(checkbox);
 
-  // Klick auf Zeile = erledigt toggeln
-  tr.addEventListener('click', (e) => {
-    if (!e.target.classList.contains('loeschen-btn')) {
-      toggleErledigt(item);
-    }
-  });
+  const tdName = document.createElement('td');
+  tdName.textContent = item.name;
 
-  // Löschen
-  const loeschenBtn = tr.querySelector('.loeschen-btn');
+  const tdKat = document.createElement('td');
+  tdKat.textContent = item.data?.kategorie ?? '';
+
+  const tdHinweis = document.createElement('td');
+  tdHinweis.textContent = item.data?.hinweis ?? '';
+
+  const tdAnzahl = document.createElement('td');
+  tdAnzahl.textContent = item.data?.anzahl ?? 1;
+
+  const tdLoeschen = document.createElement('td');
+  const loeschenBtn = document.createElement('button');
+  loeschenBtn.textContent = '🗑️';
+  loeschenBtn.title = 'Löschen';
+  loeschenBtn.className = 'loeschen-btn';
   loeschenBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     eintragLoeschen(item.id);
   });
+  tdLoeschen.appendChild(loeschenBtn);
 
+  if (erledigt) {
+    tr.classList.add('erledigt');
+  }
+
+  tr.append(tdCheckbox, tdName, tdKat, tdHinweis, tdAnzahl, tdLoeschen);
   liste.appendChild(tr);
 }
 
-// Erledigt-Status umschalten
-async function toggleErledigt(item) {
-  const erledigtNeu = !(item.data?.erledigt ?? false);
-  const neueDaten = { ...item.data, erledigt: erledigtNeu };
+async function toggleErledigt(item, status) {
+  const neueDaten = { ...item.data, erledigt: status };
 
   const { error } = await supabase
     .from('packliste')
@@ -76,7 +80,6 @@ async function toggleErledigt(item) {
   ladeListe();
 }
 
-// Eintrag löschen
 async function eintragLoeschen(id) {
   const { error } = await supabase
     .from('packliste')
@@ -84,11 +87,9 @@ async function eintragLoeschen(id) {
     .eq('id', id);
 
   if (error) console.error('Fehler beim Löschen:', error);
-
   ladeListe();
 }
 
-// Eintrag hinzufügen
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -119,8 +120,5 @@ form.addEventListener('submit', async (e) => {
   ladeListe();
 });
 
-// Sortierwechsel neu laden
 sortierung.addEventListener('change', ladeListe);
-
-// Initialer Ladevorgang
 ladeListe();
