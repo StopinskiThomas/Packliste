@@ -5,11 +5,11 @@ const supabase = window.supabase.createClient(
 );
 
 // DOM-Elemente
-const liste = document.getElementById('liste');
+const liste = document.querySelector('#liste tbody');
 const form = document.getElementById('addForm');
 const sortierung = document.getElementById('sortierung');
 
-// Liste laden
+// Einträge laden & anzeigen
 async function ladeListe() {
   const sortFeld = sortierung.value;
 
@@ -27,33 +27,38 @@ async function ladeListe() {
   data.forEach(item => zeigeItem(item));
 }
 
-// Einzelnes Item anzeigen
+// Einzelnen Eintrag anzeigen
 function zeigeItem(item) {
-  const li = document.createElement('li');
+  const tr = document.createElement('tr');
   const erledigt = item.data?.erledigt;
 
-  const info = `
-    <div class="${erledigt ? 'erledigt' : ''}">
-      <strong>${item.name}</strong> (${item.data?.anzahl ?? 1})<br>
-      <em>${item.data?.kategorie ?? ''}</em> – ${item.data?.hinweis ?? ''}
-    </div>
+  tr.className = erledigt ? 'erledigt' : '';
+
+  tr.innerHTML = `
+    <td>${item.name}</td>
+    <td>${item.data?.kategorie ?? ''}</td>
+    <td>${item.data?.hinweis ?? ''}</td>
+    <td>${item.data?.anzahl ?? 1}</td>
+    <td>
+      <button class="loeschen-btn" title="Löschen">🗑️</button>
+    </td>
   `;
 
-  li.innerHTML = info;
+  // Klick auf Zeile = erledigt toggeln
+  tr.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('loeschen-btn')) {
+      toggleErledigt(item);
+    }
+  });
 
-  li.addEventListener('click', () => toggleErledigt(item));
-
-  const loeschenBtn = document.createElement('button');
-  loeschenBtn.textContent = '🗑️';
-  loeschenBtn.className = 'loeschen-btn';
-  loeschenBtn.title = 'Löschen';
+  // Löschen
+  const loeschenBtn = tr.querySelector('.loeschen-btn');
   loeschenBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     eintragLoeschen(item.id);
   });
 
-  li.appendChild(loeschenBtn);
-  liste.appendChild(li);
+  liste.appendChild(tr);
 }
 
 // Erledigt-Status umschalten
@@ -61,25 +66,29 @@ async function toggleErledigt(item) {
   const erledigtNeu = !(item.data?.erledigt ?? false);
   const neueDaten = { ...item.data, erledigt: erledigtNeu };
 
-  await supabase
+  const { error } = await supabase
     .from('packliste')
     .update({ data: neueDaten })
     .eq('id', item.id);
+
+  if (error) console.error('Fehler beim Aktualisieren:', error);
 
   ladeListe();
 }
 
 // Eintrag löschen
 async function eintragLoeschen(id) {
-  await supabase
+  const { error } = await supabase
     .from('packliste')
     .delete()
     .eq('id', id);
 
+  if (error) console.error('Fehler beim Löschen:', error);
+
   ladeListe();
 }
 
-// Neuen Eintrag hinzufügen
+// Eintrag hinzufügen
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -110,8 +119,8 @@ form.addEventListener('submit', async (e) => {
   ladeListe();
 });
 
-// Sortierung ändern
+// Sortierwechsel neu laden
 sortierung.addEventListener('change', ladeListe);
 
-// Initialer Aufruf
+// Initialer Ladevorgang
 ladeListe();

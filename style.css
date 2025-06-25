@@ -96,3 +96,32 @@ button.loeschen-btn:hover {
   clip: rect(1px, 1px, 1px, 1px);
   white-space: nowrap;
 }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+th {
+  background-color: #f4f4f4;
+}
+
+tr.erledigt {
+  text-decoration: line-through;
+  color: gray;
+}
+
+.loeschen-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: red;
+}
