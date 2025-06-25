@@ -4,11 +4,9 @@
   <meta charset="UTF-8">
   <title>Gemeinsame Packliste</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-  <!-- Externe Dateien -->
+
+  <!-- CSS -->
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js" defer></script>
-  <script src="script.js" defer></script>
 </head>
 <body>
   <main>
@@ -27,11 +25,15 @@
     <select id="sortierung">
       <option value="inserted_at">🕓 Hinzugefügt</option>
       <option value="name">🔡 Artikelname</option>
-      <option value="kategorie">📂 Kategorie</option>
+      <option value="data->>kategorie">📂 Kategorie</option>
     </select>
 
     <h2>📋 Liste</h2>
     <ul id="liste" aria-live="polite"></ul>
   </main>
+
+  <!-- Supabase & Script -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
 </body>
 </html>
