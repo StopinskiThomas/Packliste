@@ -15,19 +15,28 @@ async function ladeListe() {
 
   const { data, error } = await supabase
     .from('packliste')
-    .select('*')
-    .order(sortFeld, { ascending: true });
+    .select('*');
 
   if (error) {
-    console.error('Fehler beim Laden:', error);
+    console.error('Fehler beim Laden:', error.message || error);
     return;
+  }
+
+  // Sortieren je nach Auswahl
+  if (sortFeld === 'name') {
+    data.sort((a, b) => a.name.localeCompare(b.name));
+  } else if (sortFeld === 'kategorie') {
+    data.sort((a, b) => (a.data?.kategorie || '').localeCompare(b.data?.kategorie || ''));
+  } else {
+    // Standard: nach Erstellungszeit
+    data.sort((a, b) => new Date(a.inserted_at) - new Date(b.inserted_at));
   }
 
   liste.innerHTML = '';
   data.forEach(item => zeigeItem(item));
 }
 
-// Eintrag anzeigen als Tabellenzeile
+// Eintrag als Tabellenzeile anzeigen
 function zeigeItem(item) {
   const tr = document.createElement('tr');
   const erledigt = item.data?.erledigt;
@@ -68,16 +77,13 @@ function zeigeItem(item) {
   });
   tdLoeschen.appendChild(loeschenBtn);
 
-  // Erledigt-Stil anwenden
-  if (erledigt) {
-    tr.classList.add('erledigt');
-  }
+  if (erledigt) tr.classList.add('erledigt');
 
   tr.append(tdCheckbox, tdName, tdKategorie, tdHinweis, tdAnzahl, tdLoeschen);
   liste.appendChild(tr);
 }
 
-// Erledigt-Status toggeln
+// Erledigt-Status ändern
 async function toggleErledigt(item, neuerStatus) {
   const neueDaten = { ...item.data, erledigt: neuerStatus };
 
@@ -87,7 +93,7 @@ async function toggleErledigt(item, neuerStatus) {
     .eq('id', item.id);
 
   if (error) {
-    console.error('Fehler beim Aktualisieren:', error);
+    console.error('Fehler beim Aktualisieren:', error.message || error);
   }
 
   ladeListe();
@@ -101,13 +107,13 @@ async function eintragLoeschen(id) {
     .eq('id', id);
 
   if (error) {
-    console.error('Fehler beim Löschen:', error);
+    console.error('Fehler beim Löschen:', error.message || error);
   }
 
   ladeListe();
 }
 
-// Eintrag hinzufügen
+// Neuen Eintrag hinzufügen
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -130,7 +136,7 @@ form.addEventListener('submit', async (e) => {
     .insert([{ name, data: daten }]);
 
   if (error) {
-    console.error('Fehler beim Einfügen:', error);
+    console.error('Fehler beim Einfügen:', error.message || error);
     return;
   }
 
@@ -138,7 +144,7 @@ form.addEventListener('submit', async (e) => {
   ladeListe();
 });
 
-// Sortierung ändern
+// Sortierung wechseln
 sortierung.addEventListener('change', ladeListe);
 
 // Initiales Laden
