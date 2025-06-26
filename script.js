@@ -22,18 +22,22 @@ async function ladeListe() {
     return;
   }
 
-  // Sortieren je nach Auswahl
+  const sortierteDaten = [...data];
+
   if (sortFeld === 'name') {
-    data.sort((a, b) => a.name.localeCompare(b.name));
+    sortierteDaten.sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortFeld === 'kategorie') {
-    data.sort((a, b) => (a.data?.kategorie || '').localeCompare(b.data?.kategorie || ''));
+    sortierteDaten.sort((a, b) => {
+      const katA = a.data?.kategorie?.toLowerCase() || '';
+      const katB = b.data?.kategorie?.toLowerCase() || '';
+      return katA.localeCompare(katB);
+    });
   } else {
-    // Standard: nach Erstellungszeit
-    data.sort((a, b) => new Date(a.inserted_at) - new Date(b.inserted_at));
+    sortierteDaten.sort((a, b) => new Date(a.inserted_at) - new Date(b.inserted_at));
   }
 
   liste.innerHTML = '';
-  data.forEach(item => zeigeItem(item));
+  sortierteDaten.forEach(item => zeigeItem(item));
 }
 
 // Eintrag als Tabellenzeile anzeigen
@@ -77,13 +81,15 @@ function zeigeItem(item) {
   });
   tdLoeschen.appendChild(loeschenBtn);
 
-  if (erledigt) tr.classList.add('erledigt');
+  if (erledigt) {
+    tr.classList.add('erledigt');
+  }
 
   tr.append(tdCheckbox, tdName, tdKategorie, tdHinweis, tdAnzahl, tdLoeschen);
   liste.appendChild(tr);
 }
 
-// Erledigt-Status ändern
+// Erledigt-Status toggeln
 async function toggleErledigt(item, neuerStatus) {
   const neueDaten = { ...item.data, erledigt: neuerStatus };
 
@@ -113,7 +119,7 @@ async function eintragLoeschen(id) {
   ladeListe();
 }
 
-// Neuen Eintrag hinzufügen
+// Neuer Eintrag
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -125,8 +131,8 @@ form.addEventListener('submit', async (e) => {
   if (!name) return;
 
   const daten = {
-    kategorie: kategorie || undefined,
-    hinweis: hinweis || undefined,
+    kategorie: kategorie || '',
+    hinweis: hinweis || '',
     anzahl,
     erledigt: false
   };
@@ -144,7 +150,7 @@ form.addEventListener('submit', async (e) => {
   ladeListe();
 });
 
-// Sortierung wechseln
+// Sortierung ändern
 sortierung.addEventListener('change', ladeListe);
 
 // Initiales Laden
